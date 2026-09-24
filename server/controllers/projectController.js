@@ -1,6 +1,6 @@
 const Project = require("../models/project");
 const Team = require("../models/Team");
-const User = require("../models/User");
+const User = require("../models/user");
 
 
 // =====================================

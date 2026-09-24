@@ -2,7 +2,7 @@ const crypto = require("crypto");
 
 const Invitation = require("../models/Invitation");
 const Team = require("../models/Team");
-const User = require("../models/User");
+const User = require("../models/user");
 
 
 // =============================
