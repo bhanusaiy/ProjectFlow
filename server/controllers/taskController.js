@@ -1,6 +1,6 @@
 const Task = require("../models/Task");
 const Project = require("../models/project");
-const User = require("../models/user");
+const User = require("../models/User");
 const Notification = require("../models/Notification");
 const TaskComment = require("../models/TaskComment");
 
