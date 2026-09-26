@@ -10,7 +10,7 @@ import {
 
 import api from "../../services/api";
 
-import { useAuth } from "../../context/authContext";
+import { useAuth } from "../../context/AuthContext";
 
 
 const JoinTeam = () => {
