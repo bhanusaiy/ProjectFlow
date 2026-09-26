@@ -4,7 +4,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import Team from "./pages/manager/team";
+import Team from "./pages/manager/Team";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 
