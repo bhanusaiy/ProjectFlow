@@ -9,13 +9,15 @@ const connectDB = require("./config/db");
 const PORT = process.env.PORT || 5000;
 
 const testTlsConnection = () => {
-  const socket = tls.connect(
-    {
-      host: "ac-hhw308p-shard-00-00.lbsnoyx.mongodb.net",
-      port: 27017,
-      servername: "ac-hhw308p-shard-00-00.lbsnoyx.mongodb.net",
-      rejectUnauthorized: true,
-    },
+const socket = tls.connect(
+  {
+    host: "ac-hhw308p-shard-00-00.lbsnoyx.mongodb.net",
+    port: 27017,
+    servername: "ac-hhw308p-shard-00-00.lbsnoyx.mongodb.net",
+    rejectUnauthorized: true,
+    minVersion: "TLSv1.2",
+    maxVersion: "TLSv1.2",
+  },
     () => {
       console.log("TLS TEST: connection established");
       console.log("TLS TEST: protocol:", socket.getProtocol());
