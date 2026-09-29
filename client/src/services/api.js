@@ -8,4 +8,18 @@ const api = axios.create({
   },
 });
 
+// Add JWT token to protected requests
+api.interceptors.request.use(
+  (config) => {
+    const token = sessionStorage.getItem("projectflow_token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 export default api;

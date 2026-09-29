@@ -32,9 +32,16 @@ export const AuthProvider = ({ children }) => {
       password,
     });
 
-    setUser(response.data.user);
+if (response.data.token) {
+  sessionStorage.setItem(
+    "projectflow_token",
+    response.data.token
+  );
+}
 
-    return response.data;
+setUser(response.data.user);
+
+return response.data;
   };
 
   // Register
@@ -51,12 +58,13 @@ export const AuthProvider = ({ children }) => {
 
   // Logout
   const logout = async () => {
-    try {
-      await api.post("/auth/logout");
-    } finally {
-      setUser(null);
-    }
-  };
+  try {
+    await api.post("/auth/logout");
+  } finally {
+    sessionStorage.removeItem("projectflow_token");
+    setUser(null);
+  }
+};
 
   return (
     <AuthContext.Provider
