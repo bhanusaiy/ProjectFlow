@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
+const Team = require("../models/Team");
 
 const generateToken = (userId) => {
   return jwt.sign(
@@ -17,6 +18,11 @@ const generateToken = (userId) => {
 const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
+    console.log("REGISTER DATA:", {
+  name,
+  email,
+  role,
+});
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -50,6 +56,18 @@ const register = async (req, res) => {
       role: role || "employee",
     });
 
+    // Automatically create a team for a new manager
+    if (user.role === "manager") {
+      const team = await Team.create({
+        name: `${user.name}'s Team`,
+        description: `${user.name}'s ProjectFlow team`,
+        owner: user._id,
+      });
+
+      user.team = team._id;
+      await user.save();
+    }
+
     return res.status(201).json({
       success: true,
       message: "User registered successfully",
@@ -58,6 +76,7 @@ const register = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        team: user.team,
       },
     });
   } catch (error) {
