@@ -18,6 +18,7 @@ import ProjectDetails from "./pages/manager/ProjectDetails";
 import ManagerTasks from "./pages/manager/ManagerTasks";
 import ManagerSettings from "./pages/manager/ManagerSettings";
 import ManagerTaskDetails from "./pages/manager/ManagerTaskDetails";
+import ProgressReports from "./pages/manager/ProgressReports";
 import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
 import EmployeeTasks from "./pages/employee/EmployeeTasks";
 import EmployeeProjects from "./pages/employee/EmployeeProjects";
@@ -97,6 +98,10 @@ const App = () => {
 <Route
   path="/manager/tasks/:id"
   element={<ManagerTaskDetails />}
+/>
+<Route
+  path="/manager/reports"
+  element={<ProgressReports />}
 />
         </Route>
 

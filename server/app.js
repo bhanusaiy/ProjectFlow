@@ -13,6 +13,7 @@ const taskRoutes =
   require("./routes/taskRoutes");
   const taskCommentRoutes = require("./routes/taskCommentRoutes");
   const notificationRoutes = require("./routes/notificationRoutes");
+  const progressReportRoutes = require("./routes/progressReportRoutes");
 const app = express();
 
 const allowedOrigins = [
@@ -62,7 +63,7 @@ app.use(
   "/api/notifications",
   notificationRoutes
 );
-
+app.use("/api/reports", progressReportRoutes);
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     success: true,

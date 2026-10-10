@@ -4,6 +4,16 @@ import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import NotificationBell from "../../components/NotificationBell";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LabelList,
+} from "recharts";
 
 
 const ManagerDashboard = () => {
@@ -12,6 +22,10 @@ const ManagerDashboard = () => {
   const { user, logout } = useAuth();
 
   const [team, setTeam] = useState(null);
+  const [reportPeriod, setReportPeriod] = useState("weekly");
+const [progressReports, setProgressReports] = useState([]);
+const [reportsLoading, setReportsLoading] = useState(false);
+const [reportsError, setReportsError] = useState("");
   const [members, setMembers] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -38,6 +52,38 @@ const ManagerDashboard = () => {
     reviewTasks: 0,
     completedTasks: 0,
   });
+
+
+
+
+
+  // =========================
+// LOAD PROGRESS REPORTS
+// =========================
+
+const loadProgressReports = async (period = reportPeriod) => {
+  setReportsLoading(true);
+  setReportsError("");
+
+  try {
+    const response = await api.get(
+      `/reports/progress?period=${period}`
+    );
+
+    setProgressReports(response.data.reports || []);
+  } catch (error) {
+    console.error("Load progress reports error:", error);
+
+    setReportsError(
+      error.response?.data?.message ||
+        "Unable to load progress reports."
+    );
+
+    setProgressReports([]);
+  } finally {
+    setReportsLoading(false);
+  }
+};
 
   // =========================
   // LOAD TEAM
@@ -182,10 +228,15 @@ useEffect(() => {
       setLoading(false);
     }
   };
+  
 
   loadData();
 }, []);
 
+
+  useEffect(() => {
+    loadProgressReports(reportPeriod);
+  }, [reportPeriod]);
 
   // =========================
   // INVITE EMPLOYEE
@@ -284,7 +335,31 @@ useEffect(() => {
     );
   }
 
+const chartData = progressReports
+  .map((report) => {
+    const snapshots = (report.history || [])
+      .filter((snapshot) => snapshot.periodType === reportPeriod)
+      .sort(
+        (a, b) =>
+          new Date(b.periodStart).getTime() -
+          new Date(a.periodStart).getTime()
+      );
 
+    const latestSnapshot = snapshots[0];
+
+    if (!latestSnapshot) return null;
+
+    const percentage = Math.max(
+      0,
+      Math.min(100, Number(latestSnapshot.progressPercentage) || 0)
+    );
+
+    return {
+      project: report.projectName || report.name || "Unnamed project",
+      progress: percentage,
+    };
+  })
+  .filter(Boolean);
   return (
     <div className="manager-dashboard">
 
@@ -508,7 +583,7 @@ useEffect(() => {
   <div className="task-progress-grid">
 
     <button
-      className="task-progress-card task-progress-button"
+      className="task-progress-card status-todo"
       onClick={() =>
         navigate("/manager/tasks?status=todo")
       }
@@ -521,7 +596,7 @@ useEffect(() => {
     </button>
 
     <button
-      className="task-progress-card task-progress-button"
+      className="task-progress-card status-in-progress"
       onClick={() =>
         navigate("/manager/tasks?status=in-progress")
       }
@@ -534,7 +609,7 @@ useEffect(() => {
     </button>
 
     <button
-      className="task-progress-card task-progress-button"
+      className="task-progress-card status-review"
       onClick={() =>
         navigate("/manager/tasks?status=review")
       }
@@ -547,7 +622,7 @@ useEffect(() => {
     </button>
 
     <button
-      className="task-progress-card task-progress-button"
+      className="task-progress-card status-completed"
       onClick={() =>
         navigate("/manager/tasks?status=completed")
       }
@@ -561,6 +636,210 @@ useEffect(() => {
 
   </div>
 
+</section>
+{/* =========================
+    WEEKLY / MONTHLY REPORTS
+========================== */}
+
+
+<section className="dashboard-section">
+  <div className="section-header">
+    <div>
+      <h2>Project Progress Reports</h2>
+      <p>Track project completion over time</p>
+    </div>
+
+    <div className="report-period-buttons">
+      <button
+        type="button"
+        className={
+          reportPeriod === "weekly"
+            ? "small-button active"
+            : "small-button"
+        }
+        onClick={() => setReportPeriod("weekly")}
+      >
+        Weekly
+      </button>
+
+      <button
+        type="button"
+        className={
+          reportPeriod === "monthly"
+            ? "small-button active"
+            : "small-button"
+        }
+        onClick={() => setReportPeriod("monthly")}
+      >
+        Monthly
+      </button>
+    </div>
+  </div>
+
+  {reportsLoading && <p>Loading progress reports...</p>}
+
+  {!reportsLoading && reportsError && (
+    <div className="error-message" role="alert">
+      {reportsError}
+      <button
+        type="button"
+        className="small-button"
+        onClick={() => loadProgressReports(reportPeriod)}
+      >
+        Retry
+      </button>
+    </div>
+  )}
+
+  {!reportsLoading && !reportsError && (
+    <>
+      <div className="progress-chart-container">
+        <h3>
+          {reportPeriod === "weekly" ? "Weekly" : "Monthly"} Progress (%)
+        </h3>
+
+        {chartData.length === 0 ? (
+          <p>No progress snapshots available for this period yet.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart
+              data={chartData}
+              margin={{ top: 25, right: 20, left: 5, bottom: 15 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+
+              <XAxis
+                dataKey="project"
+                interval={0}
+                angle={-15}
+                textAnchor="end"
+                height={70}
+              />
+
+              <YAxis
+                domain={[0, 100]}
+                ticks={[0, 20, 40, 60, 80, 100]}
+                tickFormatter={(value) => `${value}%`}
+              />
+
+              <Tooltip
+                formatter={(value) => [`${value}%`, "Progress"]}
+              />
+
+              <Bar
+                dataKey="progress"
+                name="Progress"
+                fill="#2563eb"
+                radius={[6, 6, 0, 0]}
+              >
+                <LabelList
+                  dataKey="progress"
+                  position="top"
+                  formatter={(value) => `${value}%`}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {progressReports.length === 0 ? (
+        <div className="empty-state">
+          <h3>No progress reports available</h3>
+          <p>
+            Reports will appear when the backend returns projects and
+            progress snapshots for this period.
+          </p>
+        </div>
+      ) : (
+        <div className="project-overview-grid">
+          {progressReports.map((report) => {
+            const snapshots = (report.history || [])
+              .filter((snapshot) =>
+                snapshot.periodType
+                  ? snapshot.periodType === reportPeriod
+                  : true
+              )
+              .sort(
+                (a, b) =>
+                  new Date(b.periodStart).getTime() -
+                  new Date(a.periodStart).getTime()
+              );
+
+            const latestSnapshot = snapshots[0];
+
+            return (
+              <article
+                className="project-overview-card"
+                key={report.projectId}
+              >
+                <h3>{report.projectName}</h3>
+
+                {latestSnapshot ? (
+                  <>
+                    <p>
+                      Progress: {latestSnapshot.progressPercentage}%
+                    </p>
+
+                    <div
+                      role="progressbar"
+                      aria-label={`${report.projectName} progress`}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={latestSnapshot.progressPercentage}
+                      style={{
+                        height: "8px",
+                        background: "#e5e7eb",
+                        borderRadius: "8px",
+                        overflow: "hidden",
+                        margin: "10px 0",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${Math.max(
+                            0,
+                            Math.min(
+                              100,
+                              Number(latestSnapshot.progressPercentage) || 0
+                            )
+                          )}%`,
+                          height: "100%",
+                          background: "#2563eb",
+                        }}
+                      />
+                    </div>
+
+                    <p>
+                      Completed tasks: {latestSnapshot.completedTasks} /{" "}
+                      {latestSnapshot.totalTasks}
+                    </p>
+
+                    <p>
+                      Completed during this{" "}
+                      {reportPeriod === "weekly" ? "week" : "month"}:{" "}
+                      {latestSnapshot.tasksCompletedDuringPeriod}
+                    </p>
+
+                    <small>
+                      Period starting{" "}
+                      {new Date(
+                        latestSnapshot.periodStart
+                      ).toLocaleDateString()}
+                    </small>
+                  </>
+                ) : (
+                  <p>
+                    No {reportPeriod} snapshot recorded for this project yet.
+                  </p>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </>
+  )}
 </section>
 
 
